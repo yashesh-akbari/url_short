@@ -50,79 +50,107 @@ This file contains the HTML form where users can input their long URL and option
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>URL Shortener</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
   </head>
   <body>
     <div>
-      <!-- Form to take input for URL and custom short code -->
       <form action="#" method="get" id="shorten-form">
-        <div>
-          <h1>URL Shortener</h1>
-          
-          <!-- Input field for the long URL -->
+        <div
+          class="flex flex-col ml-[28%] mr-[28%] mt-10 bg-gray-100 p-5 font-bold"
+        >
+          <h1 class="text-3xl text-center p-5">URL Shortener</h1>
           <label for="url">Enter URL:</label>
-          <input type="url" name="url" id="url" required />
+          <input type="url" name="url" id="url" class="border-1" required />
           <br />
-          
-          <!-- Input field for optional custom short code -->
           <label for="shortCode">Enter ShortCode:</label>
-          <input type="text" id="shortCode" name="shortCode" />
+          <input type="text" class="border" id="shortCode" name="shortCode" />
           <br />
-          
-          <!-- Submit button to shorten the URL -->
-          <button type="submit">Shorten</button>
+          <button
+            type="submit"
+            class="bg-blue-500 p-4 text-white rounded-2xl ml-auto mr-auto"
+          >
+            Shorten
+          </button>
           <br />
-          
-          <h2>Shortened URLs</h2>
-          <!-- Unordered list to display the shortened URLs -->
+          <h1 class="text-3xl text-center p-2">Shortened URLs</h1>
           <ul id="shortened-urls"></ul>
         </div>
       </form>
     </div>
 
     <script>
-      // Function to fetch and display the list of shortened URLs from the server
-      const fetchShortenedUrls = async () => {
-        const response = await fetch("/links"); // Fetch links from the /links endpoint
-        const links = await response.json(); // Convert the response to JSON
-        const listElement = document.getElementById("shortened-urls");
+    // Function to fetch existing shortened URLs from the server
+const fetchShortenedUrls = async () => {
+  // Fetch the list of shortened URLs from the server
+  const response = await fetch("/links");
+  
+  // Parse the JSON response into an object
+  const links = await response.json();
+  
+  // Get the DOM element to display the shortened URLs
+  const shortenedUrlsElement = document.getElementById("shortened-urls");
 
-        // Iterate through the fetched links and display them
-        links.forEach((link) => {
-          const li = document.createElement("li"); // Create a new list item
-          li.innerHTML = `<a href="/${link.shortCode}" target="_blank">${window.location.origin}/${link.shortCode}</a> - ${link.url}`;
-          listElement.appendChild(li); // Append the item to the list
-        });
-      };
+  // Clear any existing list of shortened URLs before displaying the new list
+  shortenedUrlsElement.innerHTML = "";
 
-      // Add an event listener to the form for submitting
-      document
-        .querySelector("#shorten-form")
-        .addEventListener("submit", async (event) => {
-          event.preventDefault(); // Prevent the form from reloading the page
+  // Loop through each entry (shortCode, url) in the links object
+  for (const [shortCode, url] of Object.entries(links)) {
+    // Create a new list item (<li>) for each shortened URL
+    const li = document.createElement("li");
+    
+    // Set the inner HTML to include a link and the original URL
+    li.innerHTML = `<a href="/${shortCode}" target="_blank">${window.location.origin}/${shortCode}</a> - ${url}`;
+    
+    // Append the list item to the <ul> element
+    shortenedUrlsElement.appendChild(li);
+  }
+};
 
-          const formData = new FormData(event.target); // Get form data
-          const url = formData.get("url"); // Get the long URL from the form
-          const shortCode = formData.get("shortCode"); // Get the custom short code (if any)
+// Add an event listener to the form for handling submission
+document
+  .querySelector("#shorten-form")
+  .addEventListener("submit", async (event) => {
+    // Prevent the form from submitting the usual way (page reload)
+    event.preventDefault(); 
 
-          // Send a POST request to the server to shorten the URL
-          const response = await fetch("/shorten", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url, shortCode }), // Send the data as JSON
-          });
+    // Create a FormData object from the submitted form
+    let formData = new FormData(event.target);
+    
+    // Extract the URL and shortCode from the form data
+    let url = formData.get("url");
+    let shortCode = formData.get("shortCode");
 
-          // If successful, update the displayed list of shortened URLs
-          if (response.ok) {
-            fetchShortenedUrls(); 
-            alert("URL shortened successfully!"); // Show a success message
-            event.target.reset(); // Reset the form
-          } else {
-            alert("Error: " + await response.text()); // Show error message if any
-          }
-        });
+    try {
+      // Send a POST request to the server to shorten the URL
+      const response = await fetch("/shorten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, shortCode }), // Send URL and shortCode as JSON
+      });
 
-      // Fetch and display the shortened URLs when the page loads
-      fetchShortenedUrls();
+      if (response.ok) {
+        // If the response is successful, fetch the updated list of shortened URLs
+        fetchShortenedUrls();
+        
+        // Alert the user that the URL has been shortened
+        alert("URL shortened successfully!");
+        
+        // Reset the form fields
+        event.target.reset();
+      } else {
+        // If there’s an error with the response, show the error message
+        const errorMessage = await response.text();
+        alert(errorMessage);
+      }
+    } catch (error) {
+      // If an error occurs during the fetch (network issue, etc.), log the error and show an alert
+      console.log(error);
+      alert("An error occurred. Please try again.");
+    }
+  });
+
+// Initial fetch to load any existing shortened URLs when the page loads
+fetchShortenedUrls();
     </script>
   </body>
 </html>
