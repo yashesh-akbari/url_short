@@ -294,8 +294,7 @@ If you don't have Node.js installed, download and install it from [here](https:/
 Navigate to your project folder (`url_short`) and run:
 
 ```bash
-npm init -y  # Initializes a new Node.js project (creates package.json)
-npm install  # Installs any necessary dependencies (if needed)
+npm install init # Installs any necessary dependencies (if needed)
 ```
 
 ### 3. **Run the Server**
