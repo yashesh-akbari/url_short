@@ -53,69 +53,80 @@ This file contains the HTML form where users can input their long URL and option
   </head>
   <body>
     <div>
+      <!-- Form to take input for URL and custom short code -->
       <form action="#" method="get" id="shorten-form">
         <div>
           <h1>URL Shortener</h1>
+          
+          <!-- Input field for the long URL -->
           <label for="url">Enter URL:</label>
           <input type="url" name="url" id="url" required />
           <br />
+          
+          <!-- Input field for optional custom short code -->
           <label for="shortCode">Enter ShortCode:</label>
           <input type="text" id="shortCode" name="shortCode" />
           <br />
+          
+          <!-- Submit button to shorten the URL -->
           <button type="submit">Shorten</button>
           <br />
+          
           <h2>Shortened URLs</h2>
+          <!-- Unordered list to display the shortened URLs -->
           <ul id="shortened-urls"></ul>
         </div>
       </form>
     </div>
 
     <script>
+      // Function to fetch and display the list of shortened URLs from the server
       const fetchShortenedUrls = async () => {
-        const response = await fetch("/links");
-        const links = await response.json();
+        const response = await fetch("/links"); // Fetch links from the /links endpoint
+        const links = await response.json(); // Convert the response to JSON
         const listElement = document.getElementById("shortened-urls");
 
+        // Iterate through the fetched links and display them
         links.forEach((link) => {
-          const li = document.createElement("li");
+          const li = document.createElement("li"); // Create a new list item
           li.innerHTML = `<a href="/${link.shortCode}" target="_blank">${window.location.origin}/${link.shortCode}</a> - ${link.url}`;
-          listElement.appendChild(li);
+          listElement.appendChild(li); // Append the item to the list
         });
       };
 
+      // Add an event listener to the form for submitting
       document
         .querySelector("#shorten-form")
         .addEventListener("submit", async (event) => {
-          event.preventDefault();
+          event.preventDefault(); // Prevent the form from reloading the page
 
-          const formData = new FormData(event.target);
-          const url = formData.get("url");
-          const shortCode = formData.get("shortCode");
+          const formData = new FormData(event.target); // Get form data
+          const url = formData.get("url"); // Get the long URL from the form
+          const shortCode = formData.get("shortCode"); // Get the custom short code (if any)
 
+          // Send a POST request to the server to shorten the URL
           const response = await fetch("/shorten", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url, shortCode }),
+            body: JSON.stringify({ url, shortCode }), // Send the data as JSON
           });
 
+          // If successful, update the displayed list of shortened URLs
           if (response.ok) {
-            fetchShortenedUrls();
-            alert("URL shortened successfully!");
-            event.target.reset();
+            fetchShortenedUrls(); 
+            alert("URL shortened successfully!"); // Show a success message
+            event.target.reset(); // Reset the form
           } else {
-            alert("Error: " + await response.text());
+            alert("Error: " + await response.text()); // Show error message if any
           }
         });
 
+      // Fetch and display the shortened URLs when the page loads
       fetchShortenedUrls();
     </script>
   </body>
 </html>
 ```
-
-#### Explanation:
-- **HTML Structure**: A simple form with input fields to enter the long URL and optionally a custom short code. The user can submit the form to shorten the URL.
-- **JavaScript**: Handles form submission and dynamically updates the list of shortened URLs on the page. It also fetches and displays the list of shortened URLs from the backend.
 
 #### **app.js**: (Backend)
 
@@ -127,27 +138,28 @@ let path = require("path");
 const { readFile, writeFile } = require("fs/promises"); // Import promises-based FS methods
 let crypto = require("crypto");
 
-const DATA_FILE = path.join("data", "links.json");
-let filename = "index.html";
-let pathname = path.join(__dirname, filename);
+const DATA_FILE = path.join("data", "links.json"); // Path to the JSON file for storing shortened URLs
+let filename = "index.html"; // Name of the HTML file to serve
+let pathname = path.join(__dirname, filename); // Full path to the HTML file
 
-// Load links from the data file
+// Function to load links from the data file
 const loadLinks = async () => {
   try {
-    const data = await readFile(DATA_FILE, "utf-8");
-    return JSON.parse(data); // Corrected JSON.parse
+    const data = await readFile(DATA_FILE, "utf-8"); // Read the file content
+    return JSON.parse(data); // Parse the JSON data
   } catch (error) {
     if (error.code === "ENOENT") {
+      // If file doesn't exist, create it with an empty object
       await writeFile(DATA_FILE, JSON.stringify({}));
-      return {}; // If file doesn't exist, return empty object
+      return {}; // Return an empty object
     }
-    throw error; // Rethrow error for other cases
+    throw error; // If another error occurs, throw it
   }
 };
 
-// Save links to the data file
+// Function to save links to the data file
 const saveLinks = async (links) => {
-  await writeFile(DATA_FILE, JSON.stringify(links, null, 2)); // Corrected JSON.stringify with indentation for readability
+  await writeFile(DATA_FILE, JSON.stringify(links, null, 2)); // Write the links as JSON to the file with pretty indentation
 };
 
 // Create the HTTP server
@@ -156,30 +168,30 @@ let server = http.createServer(async (req, res) => {
   if (req.method === "GET") {
     if (req.url === "/") {
       try {
-        let ans = await readFile(pathname);
+        let ans = await readFile(pathname); // Read the index.html file
         res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(ans);
+        res.end(ans); // Send the HTML file as the response
       } catch {
         res.writeHead(404, { "Content-Type": "text/html" });
         res.end("404 page not found");
       }
     }
-    // Handle the links endpoint for displaying all shortened links
+    // Handle the links endpoint to fetch all shortened links
     else if (req.url === "/links") {
-      const links = await loadLinks();
+      const links = await loadLinks(); // Get all the links
       res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify(links));
+      return res.end(JSON.stringify(links)); // Respond with the links in JSON format
     }
-    // Handle the redirect for shortened URLs
+    // Handle redirect when a shortened URL is accessed
     else {
       const shortCode = req.url.substring(1); // Extract the short code from the URL
-      const links = await loadLinks();
+      const links = await loadLinks(); // Load the links from the file
 
       // Check if the short code exists in the links
       if (links[shortCode]) {
-        // Redirect to the long URL
-        res.writeHead(301, { "Location": links[shortCode] }); // 301 Moved Permanently
-        return res.end();
+        // Redirect to the long URL if the short code exists
+        res.writeHead(301, { "Location": links[shortCode] }); // Moved Permanently status
+        return res.end(); // End the response
       } else {
         res.writeHead(404, { "Content-Type": "text/plain" });
         return res.end("Short code not found");
@@ -191,24 +203,24 @@ let server = http.createServer(async (req, res) => {
   if (req.method === "POST" && req.url === "/shorten") {
     let body = "";
 
-    // Collect chunks of the body
+    // Collect the data sent in the request body
     req.on("data", (chunk) => {
-      body += chunk; // Append data to the body
+      body += chunk; // Append the chunks of data
     });
 
-    // When the entire body is received
+    // Once the entire body is received, process the data
     req.on("end", async () => {
       try {
-        const { url, shortCode } = JSON.parse(body); // Parse the incoming JSON
+        const { url, shortCode } = JSON.parse(body); // Parse the incoming data
 
         if (!url) {
           res.writeHead(400, { "Content-Type": "text/plain" });
-          return res.end("URL is required");
+          return res.end("URL is required"); // Return an error if no URL is provided
         }
 
-        const links = await loadLinks(); // Load existing links
+        const links = await loadLinks(); // Load the existing links
 
-        // Generate short code if not provided
+        // Generate a random short code if one is not provided
         const finalShortCode = shortCode || crypto.randomBytes(4).toString("hex");
 
         if (links[finalShortCode]) {
@@ -216,15 +228,15 @@ let server = http.createServer(async (req, res) => {
           return res.end("Short code already exists. Please choose another.");
         }
 
-        // Add the link to the links object
+        // Add the new short code and URL to the links object
         links[finalShortCode] = url;
 
-        // Save updated links to file
+        // Save the updated links back to the file
         await saveLinks(links);
 
-        // Respond with the updated links
+        // Respond with the updated list of links
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(links)); // Respond with the entire updated links object
+        res.end(JSON.stringify(links));
       } catch (error) {
         console.error("Error processing request:", error);
         res.writeHead(500, { "Content-Type": "text/plain" });
@@ -234,30 +246,11 @@ let server = http.createServer(async (req, res) => {
   }
 });
 
-// Start the server on port 3003
+// Start the server
 let port = 3003;
 server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-```
-
-#### Explanation:
-- **Node.js HTTP Server**: The server listens for GET and POST requests.
-  - **GET `/`** serves the `index.html` page.
-  - **GET `/links`** returns all the shortened URLs in JSON format.
-  - **POST `/shorten`** creates a new shortened URL and stores it in the `links.json` file.
-- **File Handling**: Uses `fs/promises` to read and write JSON data to `links.json`.
-- **Redirection**: When visiting a shortened URL, the server redirects to the corresponding long URL.
-
-#### **links.json**: (Data Storage)
-
-This JSON file stores the mappings between short codes and their original URLs. Each entry has a short code (e.g., `port`) as the key and the corresponding long URL as the value.
-
-```json
-{
-  "port": "https://yashesh-akbari-portfolio.netlify.app/",
-  "portfolie": "yashesh port folio"
-}
 ```
 
 ---
