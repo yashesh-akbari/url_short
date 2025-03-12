@@ -4,6 +4,12 @@
 
 This is a simple URL shortener built with Node.js. It allows users to shorten URLs and stores the short-to-long URL mapping in a `links.json` file. The project also provides a basic web interface to interact with the service.
 
+## **Live Demo**
+You can view the live demo of the Url Shortener at the following link:
+
+[Live Demo](https://url-short-node.vercel.app/)
+
+
 ## Features
 - **Shorten URLs**: Convert long URLs into shorter ones.
 - **Custom Short Codes**: Optionally specify a custom short code for your shortened URL.
