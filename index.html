@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div>
+      <form action="#" method="get" id="shorten-form">
+        <div
+          class="flex flex-col ml-[28%] mr-[28%] mt-10 bg-gray-100 p-5 font-bold"
+        >
+          <h1 class="text-3xl text-center p-5">URL Shortener</h1>
+          <label for="url">Enter URL:</label>
+          <input type="url" name="url" id="url" class="border-1" required />
+          <br />
+          <label for="shortCode">Enter ShortCode:</label>
+          <input type="text" class="border" id="shortCode" name="shortCode" />
+          <br />
+          <button
+            type="submit"
+            class="bg-blue-500 p-4 text-white rounded-2xl ml-auto mr-auto"
+          >
+            Shorten
+          </button>
+          <br />
+          <h1 class="text-3xl text-center p-2">Shortened URLs</h1>
+          <ul id="shortened-urls"></ul>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      const fetchShortenedUrls = async () => {
+        const response = await fetch("/links");
+        const links = await response.json();
+        const shortenedUrlsElement = document.getElementById("shortened-urls");
+
+        // Clear the existing list
+        shortenedUrlsElement.innerHTML = "";
+
+        // Loop over each link and add it to the list
+        for (const [shortCode, url] of Object.entries(links)) {
+          const li = document.createElement("li");
+          li.innerHTML = `<a href="/${shortCode}" target="_blank">${window.location.origin}/${shortCode}</a> - ${url}`;
+          shortenedUrlsElement.appendChild(li);
+        }
+      };
+
+      document
+        .querySelector("#shorten-form")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault(); // Prevent default form submission
+
+          let formData = new FormData(event.target);
+          let url = formData.get("url");
+          let shortCode = formData.get("shortCode");
+
+          try {
+            const response = await fetch("/shorten", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url, shortCode }),
+            });
+
+            if (response.ok) {
+              fetchShortenedUrls(); // Fetch and update the list of shortened URLs
+              alert("URL shortened successfully!");
+              event.target.reset(); // Reset the form
+            } else {
+              const errorMessage = await response.text();
+              alert(errorMessage);
+            }
+          } catch (error) {
+            console.log(error);
+            alert("An error occurred. Please try again.");
+          }
+        });
+
+      // Initial fetch to load any existing shortened URLs
+      fetchShortenedUrls();
+    </script>
+  </body>
+</html>
