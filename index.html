@@ -44,7 +44,8 @@
         // Loop over each link and add it to the list
         for (const [shortCode, url] of Object.entries(links)) {
           const li = document.createElement("li");
-          li.innerHTML = `<a href="/${shortCode}" target="_blank">${window.location.origin}/${shortCode}</a> - ${url}`;
+          // li.innerHTML = `<a href="/${shortCode}" target="_blank">${window.location.origin}/${shortCode}</a> - ${url}`;
+          li.innerHTML = `<a href="/${shortCode}" target="_blank">https://url-shorter-xi.vercel.app/${shortCode}</a> - ${url}`;
           shortenedUrlsElement.appendChild(li);
         }
       };
