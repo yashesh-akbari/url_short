@@ -115,5 +115,3 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 > Built with ❤️ using Node.js to make learning backend development simple and fun.
-
-```
