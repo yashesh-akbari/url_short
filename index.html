@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-800 font-sans">
+    <div class="max-w-3xl mx-auto py-10 px-4">
+      <h1 class="text-3xl font-bold text-center mb-8 text-blue-600">
+        🔗 URL Shortener
+      </h1>
+
+      <form
+        id="form_submission"
+        class="bg-white p-6 rounded-xl shadow-md space-y-4 mb-10"
+      >
+        <div>
+          <label class="block font-semibold mb-1">Enter the URL:</label>
+          <input
+            type="url"
+            name="url"
+            id="url"
+            required
+            class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Enter the shortcode:</label>
+          <input
+            type="text"
+            name="shortcode"
+            id="shortcode"
+            required
+            class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition"
+        >
+          Shorten URL
+        </button>
+      </form>
+
+      <h2 class="text-2xl font-semibold mb-4 text-gray-700">
+        📄 All Shortened Links
+      </h2>
+      <div class="overflow-x-auto bg-white rounded-xl shadow-md">
+        <table class="min-w-full table-auto border border-gray-200">
+          <thead class="bg-blue-100">
+            <tr>
+              <th class="px-4 py-3 text-left font-semibold border-b">
+                Original Link
+              </th>
+              <th class="px-4 py-3 text-left font-semibold border-b">
+                Shorten Link
+              </th>
+            </tr>
+          </thead>
+          <tbody id="links_table" class="divide-y">
+            <!-- Dynamically inserted rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("form_submission")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formdata = new FormData(event.target);
+          const url = formdata.get("url");
+          const shortcode = formdata.get("shortcode");
+
+          const response = await fetch("/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `url=${encodeURIComponent(
+              url
+            )}&shortcode=${encodeURIComponent(shortcode)}`,
+          });
+
+          const result = await response.text();
+          alert(result);
+          event.target.reset();
+          fetchAndRenderLinks();
+        });
+
+      async function fetchAndRenderLinks() {
+        const res = await fetch("/links");
+        const links = await res.json();
+        const tableBody = document.getElementById("links_table");
+        tableBody.innerHTML = "";
+
+        links.forEach((link) => {
+          const row = document.createElement("tr");
+
+          const original = document.createElement("td");
+          original.className = "px-4 py-2";
+          original.innerHTML = `<a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.url}</a>`;
+
+          const shortened = document.createElement("td");
+          shortened.className = "px-4 py-2";
+          shortened.innerHTML = `<a href="https://url-shorter-xi.vercel.app/${link.shortcode}" target="_blank" class="text-green-600 hover:underline">https://url-shorter-xi.vercel.app/${link.shortcode}</a>`;
+
+          row.appendChild(original);
+          row.appendChild(shortened);
+          tableBody.appendChild(row);
+        });
+      }
+
+      window.onload = fetchAndRenderLinks;
+    </script>
+  </body>
+</html>
